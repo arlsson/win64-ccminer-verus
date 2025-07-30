@@ -1,0 +1,107 @@
+
+# ccminer v3.8.3 (PBAAS) - Verushash 2.2 - Windows 64-bit
+
+    Custom Windows static build of ccminer with optional CPU temperature monitoring and enhanced stratum client.stats response (and hwinfo API), designed for advanced users mining Verushash 2.2 (PBAAS).
+
+    This build supports optional hardware telemetry reporting, useful for monitoring systems, pools, or proxies requiring additional runtime data.
+
+## What's Included
+
+    - ccminer.exe       : Main mining binary (Verushash 2.2, PBAAS compatible, Win64)
+    - cputemp.exe       : Reads CPU temperature using LibreHardwareMonitor
+    - updatetemp.exe    : Fetches CPU temp and sends it to running ccminer via TCP (127.0.0.1:4068)
+    - LibreHardwareMonitorLib.dll : Required DLL for temperature sensor access on Windows
+
+
+## Features
+
+    - Extended stratum client.stats and hwinfo API replies with optional fields:
+      - cpu_temp : CPU temperature (from sensor or external update)
+      - khs      : Global hashrate (averaged)
+
+    - Two methods for updating CPU temperature:
+      - Automatic: cputemp.exe runs during API/stratum requests if present
+      - External: updatetemp.exe pushes temp manually or on schedule
+
+    - Uses LibreHardwareMonitor v0.9.4 for sensor access (https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
+      - Optional for operation, required only if using cputemp.exe
+
+    (helper binaries are .NET Framework 4.7(Mono 4.7)
+
+
+## System Requirements
+
+    - OS: Windows 64-bit
+    - .NET Framework 4.7 or later (required for helper binaries)
+    - Administrator privileges may be needed for CPU temperature access
+    - Note: Windows may block unsigned binaries by default — you may need to allow execution manually
+
+## Usage
+
+### Basic Mining
+
+    ccminer.exe -a verus -o stratum+tcp://<pool> -u <wallet>.<worker> -p x
+
+### Option 1: Use cputemp.exe (auto-invoked)
+
+    ccminer.exe -a verus -o stratum+tcp://<pool> -u <wallet>.<worker> -p x
+
+When cputemp.exe is in the same directory as ccminer.exe, it will be executed automatically during each client.stats stratum message or hwinfo API call.
+
+Temperature source priority:
+  1. CPU Package temperature
+  2. Maximum core temperature (if package not available)
+  3. Average core temperature (fallback)
+
+Note: This runs synchronously.
+
+### Option 2: Use updatetemp.exe (manual or scheduled)
+
+    ccminer.exe -a verus -o stratum+tcp://<pool> -u <wallet>.<worker> -p x --api-remote
+
+Run updatetemp.exe separately to push temperature data:
+
+    updatetemp.exe [host] [port]
+
+Examples:
+
+    updatetemp.exe
+    updatetemp.exe 127.0.0.1
+    updatetemp.exe 127.0.0.1 4068
+
+Defaults:
+  - Host: 127.0.0.1
+  - Port: 4068
+
+The tool reads local CPU temperature and sends it to ccminer via TCP. You can schedule this using Task Scheduler or a script for periodic updates.
+
+## Development Notes
+
+    The current client.stats extension was implemented based on early assumptions about stratum behavior. A cleaner implementation is being developed in yacffe and will be merged soon to improve stability without breaking existing integrations.
+
+    Temperature reporting is optional:
+      - If cputemp.exe is missing or fails, no error occurs — field is omitted.
+      - You can disable auto-reads entirely by removing cputemp.exe and use only updatetemp.exe.
+
+    You may safely remove cputemp.exe and rely on external updates (e.g., via cron or Task Scheduler) if preferred.
+
+## Security Notes
+
+    updatetemp.exe communicates with ccminer over TCP on port 4068 (default: 127.0.0.1:4068). This connection is local-only.
+
+
+## Why
+
+    This build was created to support temperature reporting for proxy-side monitoring in environments where hardware visibility is limited.
+
+    (libcurl build have room for improvements)
+
+
+## Legal & Ethical
+
+    Use at your own risk. You are running mining software — act responsibly.
+    No warranties are provided. The software is distributed "as is".
+    Not a lawyer. Not your legal guardian. Don't be stupid.
+
+--- 
+
